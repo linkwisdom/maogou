@@ -17,63 +17,123 @@
  * 5. 更多新特性在完善
  *    web-client support, 与couchDB一样，我们希望能够提供一个支持http数据库操作API接口
  *    
- * 依赖: mongodb
+ * 依赖: 
+ * - mongodb
+ *   nodejs访问mongodb的基础组件
+ *  
+ * - Collection.js 
+ *   实现了promise和uncurring链式调用，封装实现了类mongodb客户端脚本调用方式
+ * 
  */
 
 var mongo = require('mongodb');
 var Collection = require('./Collection');
 
-
+/**
+ * MaoGou 实现了基础的mongodb调用方法，
+ * 其中公开方法参数约定为：
+ * 第一个参数为collection名称
+ * 最后两个参数分别为options和callback
+ * 使用方法:
+ * var db = new MaoGou();
+ * db.connect(params, 'user');
+ * db.user.find({}).done(print);
+ */
     
 function MaoGou() {
+    
+    //如果要求authentic才能访问，在connect参数中提供用户名和密码
     var username = null;
     var password = null;
-    var authed = false;
+
+    //是否采用模糊查询
     var igrep = false;
+    
+    //当前对象别名
     var me = this;
-    var _dbList = [];
+    
+    //连接池
+    var linkPool = [];
+    
+    /**
+     * @param {object} params连接参数
+     * @param {string/array} 需要链接的集合
+     */
+    this.connect = function(params, cols) {
+        //预设参数
+        username = params.username;
+        password = params.password;
+        igrep = params.igrep;
+        
+        cols || (cols = []);
+        ('string' == typeof cols) && (cols = [cols]);
+        
+        //为了每次请求采用新的连接，使用Getter变量
+        me.__defineGetter__('db', function() {
+            var server = new mongo.Server(params.ip, params.port, {});
+            return new mongo.Db(params.db, server, {w:1});
+        });
+
+        //为每个集合创建一个collection对象
+        cols.forEach(function(item) {
+            me[item] = new Collection(item, me);
+        });
+    }
     
     
+    /**
+     * 获得collection后的请求处理函数
+     * 为保持callback和db参数，采用返回函数形式
+     * @param {function} callback 回调函数 
+     * @param {MongoDB} db
+     * @return {function}
+     */
     function resolve(callback, db) {
         return function(err, collection) {
-            if (db) {
-                _dbList.push(db);
-            }
-            if (callback) {
-                callback(err, collection);
-            }
+            //将连接加入连接池管理
+            linkPool.push(db);
+            //执行回调函数
+            callback(err, collection);
         }
     }
     
     /**
+     * 获得collection对象
+     * 解决登录和非登录两种连接方式
+     * 
      * @param{string} coName 文档名称
      * @param{function} callback 回调函数
      */
      function execute(coName, callback) {
+          
+          //me.db是一个Getter属性，动态获得请求链接
           var db = me.db;
           
-          if (!password || authed) {
+          //无密码访问
+          if (!password) {
               db.open(function(err, db) {
                   db.collection(coName, resolve(callback, db));
               });
               return;
           }
           
+          //需要验证方式链接, 比如BAE访问mongodb
           db.open(function(err, db) {
-              db.authenticate(username, password, function(err, result) { 
-                  if (!result) {
-                    callback('Authenticate failed!');
-                    return; 
-                  }
-                  //authed = true;
-                  db.collection(coName, resolve(callback, db)); 
-                });  
+              db.authenticate(username, password, function(err, result) {
+                    if (result) {
+                        db.collection(coName, resolve(callback, db)); 
+                    }
+                });
               }
           );
     }
     
     /**
-     * 将字符串关联数组转为模糊查询条件 
+     * 将字符串关联数组转为模糊查询条件
+     * 主要是面向HTTP访问方式
+     * 星号*表示模糊查询 
+     * 叹号！表示对应字段为空的条件
+     * @params {object} selector 需要转化的查询条件
      */
     function itrans(selector) {
         if (!igrep) {
@@ -81,8 +141,7 @@ function MaoGou() {
         }
         for (var item in selector) {
             var v = selector[item];
-            
-            if ((typeof v == 'string') ) {
+            if ((typeof v == 'string')) {
                 var c = v.charAt(0);
                 if (c == '*') {
                     v = v.replace(/\*/g , '.*');
@@ -103,59 +162,48 @@ function MaoGou() {
     }
     
     /**
-     * update a document, if not exists, insert the doc.
-     * @param{string} coName 文档名称
-     * @param{function} callback 回调函数
+     * 更新文档
+     * @param {object} selector 查询条件
+     * @param {object} updator 更新操作
+     * @param {object} options 参考mongodb文档
      */
-    this.update = function(coName, selector, docs, options, callback) {
-         //options.upsert = true;
-         //options.w = 1;
+    this.update = function(coName, selector, updator, options, callback) {
          itrans(selector);
-         
          function action(err, collection) {
-             collection.update(selector, docs, options, callback);  
+             collection.update(selector, updator, options, callback);  
          }
          execute(coName, action);
     }
     
+    /**
+     * 设置文档主键
+     * @param {string} fname 字段名称
+     * @param {object} options 参考mongodb文档 
+     */
     this.ensureIndex = function(colName, fname, options, callback) {
         execute(colName, function(err, collection) {
             collection.ensureIndex(fname, options, callback);
         });
     }
     
-    this.dropIndex = function(colName, name, options, callback) {
+    /**
+     * 删除文档主键
+     * @param {string} fname 字段名称
+     * @param {object} options 暂时默认为{}
+     */
+    this.dropIndex = function(colName, fname, options, callback) {
         execute(colName, function(err, collection) {
-            collection.dropIndex(name, callback);
+            collection.dropIndex(fname, callback);
         });
     }
     
-    
-    this.connect = function(params, cols) {
-        username = params.username;
-        password = params.password;
-        igrep = params.igrep;
-        
-        cols || (cols = []);
-        ('string' == typeof cols) && (cols = [cols]);
-        
-        me.__defineGetter__('db', function() {
-            var server = new mongo.Server(params.ip, params.port, {});
-            return new mongo.Db(params.db, server, {w:1});
-        });
-
-        cols.forEach(function(item) {
-            me[item] = new Collection(item, me);
-        });
-    }
-
     /*
      * @param{object} json必须包含key,
      * date和data属性，其中key指定数据库集合名，date为数据产生的日期，data为数据的集合
      * @param{function} func为回调函数
      */
-    this.save = function(col, json, options, callback) {
-        execute(col, function(err, collection) {
+    this.save = function(colName, json, options, callback) {
+        execute(colName, function(err, collection) {
             collection.insert(json, function(err, docs) {
               collection.count(function(err, count) {
                 callback(null, {count: count});
@@ -164,9 +212,14 @@ function MaoGou() {
         });
     }
 
-    this.find = function(col, selector, options, callback) {
+    /**
+     * 查找文档
+     * @param {object} selector 查询条件
+     * @param {object} options 参考mongodb文档
+     */
+    this.find = function(colName, selector, options, callback) {
         var arr = [];
-        execute(col, function(err, collection) {
+        execute(colName, function(err, collection) {
             if (err) {
                 callback(err, null);
             }
@@ -178,9 +231,14 @@ function MaoGou() {
         });
     }
     
-    this.findOne = function(col, selector, options, callback) {
+    /**
+     * 查找单个文档
+     * @param {object} selector 查询条件
+     * @param {object} options 参考mongodb文档
+     */
+    this.findOne = function(colName, selector, options, callback) {
         var arr = [];
-        execute(col, function(err, collection) {
+        execute(colName, function(err, collection) {
             if (err) {
                 callback && callback({msg:'error'});
             }
@@ -191,9 +249,14 @@ function MaoGou() {
         });
     }
     
-    this.geoNear = function(col, loc, options, callback) {
+    /**
+     * 按空间位置检索元素
+     * @param {array} loc 查询位置 loc[log,lat]
+     * @param {object} options 参考mongodb文档
+     */
+    this.geoNear = function(colName, loc, options, callback) {
         var arr = [];
-        execute(col, function(err, collection) {
+        execute(colName, function(err, collection) {
             if (err) {
                 callback && callback({msg:'error'});
             }
@@ -206,22 +269,27 @@ function MaoGou() {
         });
     }
     
-    this.count = function(col, options, callback) {
-        execute(col, function(err, collection) {
-            collection.count({}, callback);
+    /**
+     * 计算集合的文档数目
+     * @param {object} options 默认为{}
+     */
+    this.count = function(colName, options, callback) {
+        execute(colName, function(err, collection) {
+            collection.count(options, callback);
         })
     }
     
-    this.remove = function(col, selector, options, callback) {
-        execute(col, function(err, collection) {
-            if (err) {
-                callback(err, {});
-                return;
-            }
-            
-            itrans(selector);
-
-            collection.remove(selector, options, callback);        
+    /**
+     * 删除文档
+     * @param {object} selector 查询条件
+     * @param {object} options 参考mongodb文档
+     */
+    this.remove = function(colName, selector, options, callback) {
+        execute(colName, function(err, collection) {
+            if (collection) {
+                itrans(selector);
+                collection.remove(selector, options, callback);
+            }      
         });
     }
     
@@ -232,16 +300,6 @@ function MaoGou() {
      *  @params {Function}
      */
     this.mapReduce = function(colName, map, reduce, options, callback) {
-        if(typeof map == 'string') {
-            var key = map;
-            map = 'function() {emit(this.'
-                    + map
-                    +', 1);}';
-        }
-        else if(map === null) {
-            map = function() { emit(this._id, 1); }
-        }
-        
         options.out = {replace : 'tempCollection'};
         execute(colName, function(err, collection) {
            collection.mapReduce(map, reduce, options, 
@@ -255,13 +313,19 @@ function MaoGou() {
                }
             );
         });
-   }
-           
-    this.close = function() {
-       var db = _dbList.shift();
+    }
+    
+    /**
+     * 关闭连接池，确认请求都结束后，
+     * 使用db.close()
+     * 或db.xx.close()
+     * @param colName集合名称
+     */  
+    this.close = function(colName) {
+       var db = linkPool.shift();
        while (db) {
            db.close();
-           db = _dbList.shift();
+           db = linkPool.shift();
        }
     }
 }
