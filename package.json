@@ -1,0 +1,28 @@
+{
+  "author": {
+    "name": "liandong liu"
+  },
+  "name": "maogou",
+  "description": "help noder connect and query mongodb in mognod style, however, promise and uncrurring pattern also supported, joy node!",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/linkwisdom/maogou.git"
+  },
+  "main": "./index.js",
+  "keywords": [
+    "mongo",
+    "mongodb",
+    "node-mongo",
+    "maogou"
+  ],
+  "dependencies": {
+  },
+  "engines": {
+    "node": "*"
+  },
+  "readme": " @author liu@liandong.org\r\n @homepage http://www.liandong.org\r\n \r\nmaogou是一个nodejs访问mongodb的支持工具\r\n相比mongodb组件，maogou有以下新的特性\r\n\r\n >  采用类似mongodb客户端的简洁灵活的语法\r\n\r\n     db.user.find({name: 'linkwisdom'}).then(print);\r\n\r\n >  采用promise防止异步调用的错乱结构,同时支持中间件处理\r\n\r\n     db.user.find({age: 19})\r\n         .then(filter)\r\n         .done(print);\r\n     \r\n \r\n > 采用uncurring语法结构进行参数设置\r\n\r\n     db.vistor.geoNear([130.19,39.102])\r\n          .maxDsitance(0.39)\r\n          .limit(25)\r\n          .done(print);\r\n\r\n > 支持简化的mapreduce，find, update,remove,geoNear,count等过程\r\n\r\n     db.vistor.update({age: 19},{age: 20})\r\n         .set({w: 1})\r\n         .done(print);\r\n\r\n\r\n >  更多新特性在完善\r\n   web-client support, 与couchDB一样，我们希望能够提供一个支持http数据库操作API接口\r\n\r\n\r\n * 依赖: mongodb\r\n \r\n * use case\r\n \r\n   [旅行地图](http://liandong.org/travel)\r\n\r\n   [凤巢数据中心](http://ecomfe/uedc)\r\n\r\n * 使用方法\r\n\r\n    参考 [test.js](https://raw.github.com/linkwisdom/maogou/master/test.js)\r\n    \r\n    \r\n\r\n",
+  "readmeFilename": "README.md",
+  "_id": "maogou@0.0.1",
+  "_from": "maogou"
+}

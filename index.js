@@ -35,12 +35,11 @@ var Collection = require('./Collection');
  * 第一个参数为collection名称
  * 最后两个参数分别为options和callback
  * 使用方法:
- * var db = new MaoGou();
- * db.connect(params, 'user');
+ * var db = new MaoGou(params, 'user');
  * db.user.find({}).done(print);
  */
     
-function MaoGou() {
+function MaoGou(params, db) {
     
     //如果要求authentic才能访问，在connect参数中提供用户名和密码
     var username = null;
@@ -54,6 +53,15 @@ function MaoGou() {
     
     //连接池
     var linkPool = [];
+
+    // var user = new db.Collection('user');
+    me.Collection = Collection;
+    
+     function _construct() {
+        if (params && db) {
+            me.connect(params, db);
+        }
+     }
     
     /**
      * @param {object} params连接参数
@@ -328,6 +336,8 @@ function MaoGou() {
            db = linkPool.shift();
        }
     }
+    
+    _construct();
 }
 
 module.exports = MaoGou; 
