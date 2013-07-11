@@ -10,8 +10,10 @@
    @homepage http://www.liandong.org
  
 # usage
-    
-    npm install maogou
+
+
+
+     npm install maogou
     
 - please make sure that mongdb package have been installed
 
@@ -50,6 +52,7 @@
   
 支持失败与成功的事件处理，利用事件机制可以根据更灵活地扩展程序
 
+
      db.user.save([{user: 'jack'}, {user: 'mark'}])
          .onSuccess(function(result) {
              //cons~
@@ -64,7 +67,7 @@
 采用反柯里的语法结构进行参数设置
 
 
-     db.vistor.geoNear([130.19,39.102])
+     db.visitor.geoNear([130.19, 39.102])
           .maxDsitance(0.39)
           .limit(25)
           .done(print);
@@ -73,7 +76,7 @@
 
 支持简化的mapreduce，find, update,remove,geoNear,count等过程
 
-     db.vistor.update({age: 19},{age: 20})
+     db.visitor.update({age: 19},{age: 20})
          .set({w: 1})
          .done(print);
          
