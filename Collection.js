@@ -1,3 +1,5 @@
+var events = require('events');
+
 var mapList = {
     find: ['fields', 'limit', 'sort', 'skip', 'min', 'max'],
     findOne: ['fields', 'limit', 'sort', 'skip', 'min', 'max'],
@@ -7,6 +9,8 @@ var mapList = {
 
 function Augment(fname, options) {
     var me = this;
+    var emitter = new events.EventEmitter();
+    
     var funs = mapList[fname];
     var taskQue = [];
 
@@ -18,15 +22,32 @@ function Augment(fname, options) {
     }
     
     this.resolve = function(err, result) {
+        if (err) {
+            err.func = fname;
+            emitter.emit('error', err);
+            return;
+        }
+        
         var fun, rst;
         do {
             fun = taskQue.shift();
             if (fun) {
                 rst = fun(err, rst || result);
             }
+            
         } while(fun);
+        
+        emitter.emit('ok', result);
     }
     
+    this.onError = function(callback) {
+        emitter.on('error', callback);
+    }
+    
+    this.onSuccess = function(callback) {
+        emitter.on('ok', callback);
+    }
+
     this.set = function(params) {
         for (var item in params) {
             options[item] = params[item];

@@ -31,10 +31,11 @@ function testInsert() {
     }
     
     photo.save(dataList).done(
-        function(err, result){
+        function(err, result) {
             var c = photo.count();
             c.done(print);
-    });
+        }
+    );
 }
 
 
@@ -58,17 +59,29 @@ function testFind() {
         .limit(12)
         .sort(['address']);
     
-    promise.then(function(err, result){
+    promise.then(function(err, result) {
         var c = photo.count();
-        c.done(function(err, result){
+        c.done(function(err, result) {
             console.log(result);
             photo.close();
         });
     });
     
-    promise.done(function(err, result){
+    promise.done(function(err, result) {
         console.log(result);
         photo.close();
+    });
+    
+    promise.onSuccess(function(result) {
+        console.log(result);
+    });
+    
+    promise.onSuccess(function(result) {
+        console.log('success');
+    });
+    
+    promise.onError(function(err) {
+        console.log(err);
     });
 }
 

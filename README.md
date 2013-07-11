@@ -45,7 +45,19 @@
      db.user.find({age: 19})
          .then(filter)
          .done(print);
-     
+
+- support sucess and fail notifying events for more flexible extentions
+  
+支持失败与成功的事件处理，利用事件机制可以根据更灵活地扩展程序
+
+     db.user.save([{user: 'jack'}, {user: 'mark'}])
+         .onSuccess(function(result) {
+             //cons~
+         })
+         .onError(function(err) {
+             //si~
+         })
+         .done(print);
  
 -  setup the argument `options` in an uncurring pattern
   
@@ -69,7 +81,7 @@
 
 按需连接，即时关闭
 
-     db.user.find({}).done(function(err, docs){
+     db.user.find({}).done(function(err, docs) {
          db.user.close();
      });
 
