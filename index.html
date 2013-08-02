@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <title>Maogou by linkwisdom</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Maogou</h1>
+        <h2>maogou——mongodb开发框架</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/linkwisdom/maogou/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/linkwisdom/maogou/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/linkwisdom/maogou" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a name="maogou" class="anchor" href="#maogou"><span class="octicon octicon-link"></span></a>maogou</h1>
+
+<blockquote>
+<p>help noders access mongodb in a mongod and promise style</p>
+
+<p>maogou是一个帮助node开发者访问mongodb的工具，开发者可以使用mongodb原生的语法格式，且支持promise调用方式</p>
+</blockquote>
+
+<h1>
+<a name="author-info" class="anchor" href="#author-info"><span class="octicon octicon-link"></span></a>author info.</h1>
+
+<p><a href="https://github.com/author" class="user-mention">@author</a> <a href="mailto:liu@liandong.org">liu@liandong.org</a></p>
+
+<p>@homepage <a href="http://www.liandong.org">http://www.liandong.org</a></p>
+
+<h1>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>usage</h1>
+
+<pre><code>npm install maogou
+</code></pre>
+
+<ul>
+<li>please make sure that mongdb package have been installed</li>
+</ul><p>确保mongodb- node包已经安装， 暂不考虑本地引入mongodb</p>
+
+<blockquote>
+<p>for demo cases, click <a href="https://raw.github.com/linkwisdom/maogou/master/test.js">test.js</a></p>
+</blockquote>
+
+<h1>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>features</h1>
+
+<ul>
+<li>
+<p>easy setup and connect mongodb</p>
+
+<p>简洁的连接方式</p>
+
+<p>var db = new MaoGou(params, 'user');</p>
+</li>
+<li><p>mongodb-like</p></li>
+</ul><p>采用类似mongodb客户端的简洁灵活的语法</p>
+
+<pre><code> db.user.find({name: 'linkwisdom'}).then(print);
+</code></pre>
+
+<ul>
+<li>promise and deffred are augmented, handler data in a midware-pipe line with then-chains</li>
+</ul><p>采用promise防止异步调用的错乱结构,同时支持中间件处理</p>
+
+<pre><code> db.user.find({age: 19})
+     .then(filter)
+     .done(print);
+</code></pre>
+
+<ul>
+<li>support sucess and fail notifying events for more flexible extentions</li>
+</ul><p>支持失败与成功的事件处理，利用事件机制可以根据更灵活地扩展程序</p>
+
+<pre><code> db.user.save([{user: 'jack'}, {user: 'mark'}])
+     .onSuccess(function(result) {
+         //cons~
+     })
+     .onError(function(err) {
+         //si~
+     })
+     .done(print);
+</code></pre>
+
+<ul>
+<li> setup the argument <code>options</code> in an uncurring pattern</li>
+</ul><p>采用反柯里的语法结构进行参数设置</p>
+
+<pre><code> db.vistor.geoNear([130.19,39.102])
+      .maxDsitance(0.39)
+      .limit(25)
+      .done(print);
+</code></pre>
+
+<ul>
+<li> serveral useful functions, mapreduce, find, update, remove, geoNear, cout, etc. are supported and augmented</li>
+</ul><p>支持简化的mapreduce，find, update,remove,geoNear,count等过程</p>
+
+<pre><code> db.vistor.update({age: 19},{age: 20})
+     .set({w: 1})
+     .done(print);
+</code></pre>
+
+<ul>
+<li>connect on demmand, close any time;</li>
+</ul><p>按需连接，即时关闭</p>
+
+<pre><code> db.user.find({}).done(function(err, docs) {
+     db.user.close();
+ });
+</code></pre>
+
+<ul>
+<li> more ...</li>
+</ul><p>更多新特性在完善</p>
+
+<p>web-client support, 与couchDB一样，我们希望能够提供一个支持http数据库操作API接口</p>
+
+<h1>
+<a name="dependency" class="anchor" href="#dependency"><span class="octicon octicon-link"></span></a>dependency</h1>
+
+<pre><code>mongodb package
+</code></pre>
+
+<h1>
+<a name="use-case" class="anchor" href="#use-case"><span class="octicon octicon-link"></span></a>use case</h1>
+
+<p><a href="http://liandong.org/travel">旅行地图</a></p>
+
+<p><a href="http://ecomfe/uedc">凤巢数据中心</a></p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
