@@ -1,4 +1,4 @@
-# maogou
+# maogou  [项目主页](http://linkwisdom.github.io/maogou/)
 > help noders access mongodb in a mongod and promise style
 
 > maogou是一个帮助node开发者访问mongodb的工具，开发者可以使用mongodb原生的语法格式，且支持promise调用方式
