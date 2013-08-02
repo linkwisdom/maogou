@@ -6,7 +6,7 @@ var params = {
     username: root,
     //password: false,
     igrep: true
-}
+};
 
 var db = new MaoGou(params);
 db.connect(params, ['test', 'photo']);
@@ -18,7 +18,7 @@ function print(err, result) {
 }
 
 function testIndex() {
-    photo.ensureIndex({loc:'2d'}).then(print);
+    photo.ensureIndex({loc: '2d'}).then(print);
 }
 
 function testInsert() {
@@ -40,11 +40,17 @@ function testInsert() {
 
 
 function testUpdate() {
-    var promise = photo.update({name:'liandong'}, {$set: {degree: 5}});
+    var promise = photo.update(
+        {name: 'liandong'}
+        ,{
+            $set: {degree: 5}
+        }
+    );
+    
     promise.then(
         function(err, result) {
-            photo.find({name:'liandong'})
-                .set({_id:false})
+            photo.find({name: 'liandong'})
+                .set({_id: false})
                 .done(print);
         }
     );

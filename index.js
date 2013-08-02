@@ -1,21 +1,34 @@
-/*
+/**
+ * @file mongoudb基础扩展
+ * 
  * @author liu@liandong.org
  * 
  * maogou是一个nodejs访问mongodb的支持工具
  * 相比mongodb组件，maogou有以下新的特性
+ * 
  * 1. 采用类似mongodb客户端的简洁灵活的语法
- *    db.user.find({name:'linkwisdom'}).then(print);
+ *    db.user.find({name: 'linkwisdom'})
+ *           .then(print);
+ * 
  * 2. 采用promise防止异步调用的错乱结构,同时支持中间件处理
- *    db.user.find({age:19}).then().done()
+ *    db.user.find({age: 19})
+ *           .then()
+ *           .done()
  * 
  * 3. 采用uncurring语法结构进行参数设置
- *    db.vistor.geoNear([130.19,39.102]).maxDsitance(0.39).limit(25).then(print);
+ *    db.vistor.geoNear([130.19,39.102])
+ *             .maxDsitance(0.39)
+ *             .limit(25)
+ *             .then(print);
  * 
  * 4. 支持简化的mapreduce，find, update,remove,geoNear,count等过程
- *    db.vistor.update({age:19},{age:20}).update().done(print);
+ *    db.vistor.update({age: 19},{age: 20})
+ *             .update()
+ *             .done(print);
  * 
  * 5. 更多新特性在完善
- *    web-client support, 与couchDB一样，我们希望能够提供一个支持http数据库操作API接口
+ *    web-client support, 与couchDB一样，
+ *    我们希望能够提供一个支持http数据库操作API接口
  *    
  * 依赖: 
  * - mongodb
@@ -42,8 +55,8 @@ var Collection = require('./Collection');
 function MaoGou(params, db) {
     
     //如果要求authentic才能访问，在connect参数中提供用户名和密码
-    var username = null;
-    var password = null;
+    var username;
+    var password;
 
     //是否采用模糊查询
     var igrep = false;
@@ -54,14 +67,13 @@ function MaoGou(params, db) {
     //连接池
     var linkPool = [];
 
-    // var user = new db.Collection('user');
     me.Collection = Collection;
     
-     function _construct() {
+    function _construct() {
         if (params && db) {
             me.connect(params, db);
         }
-     }
+    }
     
     /**
      * @param {object} params连接参数
@@ -79,14 +91,14 @@ function MaoGou(params, db) {
         //为了每次请求采用新的连接，使用Getter变量
         me.__defineGetter__('db', function() {
             var server = new mongo.Server(params.ip, params.port, {});
-            return new mongo.Db(params.db, server, {w:1});
+            return new mongo.Db(params.db, server, {w: 1});
         });
 
         //为每个集合创建一个collection对象
         cols.forEach(function(item) {
             me[item] = new Collection(item, me);
         });
-    }
+    };
     
     
     /**
@@ -102,7 +114,7 @@ function MaoGou(params, db) {
             linkPool.push(db);
             //执行回调函数
             callback(err, collection);
-        }
+        };
     }
     
     /**
@@ -112,28 +124,26 @@ function MaoGou(params, db) {
      * @param{string} coName 文档名称
      * @param{function} callback 回调函数
      */
-     function execute(coName, callback) {
+    function execute(coName, callback) {
+        //me.db是一个Getter属性，动态获得请求链接
+        var db = me.db;
+         
+        //无密码访问
+        if (!password) {
+            db.open(function(err, db) {
+                db.collection(coName, resolve(callback, db));
+            });
+            return;
+        }
           
-          //me.db是一个Getter属性，动态获得请求链接
-          var db = me.db;
-          
-          //无密码访问
-          if (!password) {
-              db.open(function(err, db) {
-                  db.collection(coName, resolve(callback, db));
-              });
-              return;
-          }
-          
-          //需要验证方式链接, 比如BAE访问mongodb
-          db.open(function(err, db) {
-              db.authenticate(username, password, function(err, result) {
-                    if (result) {
-                        db.collection(coName, resolve(callback, db)); 
-                    }
-                });
-              }
-          );
+         //需要验证方式链接, 比如BAE访问mongodb
+        db.open(function(err, db) {
+            db.authenticate(username, password, function(err, result) {
+                if (result) {
+                      db.collection(coName, resolve(callback, db)); 
+                }
+            });
+        });
     }
     
     /**
@@ -159,9 +169,11 @@ function MaoGou(params, db) {
                             selector[item] = r;
                         }
                     }
-                    catch (ex) {}
+                    catch (ex) {
+                        console.log('illegal regs');
+                    }
                 }
-                else if(c == '!') {
+                else if (c == '!') {
                     selector[item] = null;
                 }
             }
@@ -176,12 +188,12 @@ function MaoGou(params, db) {
      * @param {object} options 参考mongodb文档
      */
     this.update = function(coName, selector, updator, options, callback) {
-         itrans(selector);
-         function action(err, collection) {
-             collection.update(selector, updator, options, callback);  
-         }
-         execute(coName, action);
-    }
+        itrans(selector);
+        function action(err, collection) {
+            collection.update(selector, updator, options, callback);  
+        }
+        execute(coName, action);
+    };
     
     /**
      * 设置文档主键
@@ -192,7 +204,7 @@ function MaoGou(params, db) {
         execute(colName, function(err, collection) {
             collection.ensureIndex(fname, options, callback);
         });
-    }
+    };
     
     /**
      * 删除文档主键
@@ -203,7 +215,7 @@ function MaoGou(params, db) {
         execute(colName, function(err, collection) {
             collection.dropIndex(fname, callback);
         });
-    }
+    };
     
     /*
      * @param{object} json必须包含key,
@@ -218,7 +230,7 @@ function MaoGou(params, db) {
               });
             });
         });
-    }
+    };
 
     /**
      * 查找文档
@@ -226,7 +238,6 @@ function MaoGou(params, db) {
      * @param {object} options 参考mongodb文档
      */
     this.find = function(colName, selector, options, callback) {
-        var arr = [];
         execute(colName, function(err, collection) {
             if (err) {
                 callback(err, null);
@@ -237,7 +248,7 @@ function MaoGou(params, db) {
                 cursor.toArray(callback);
             }
         });
-    }
+    };
     
     /**
      * 查找单个文档
@@ -245,17 +256,16 @@ function MaoGou(params, db) {
      * @param {object} options 参考mongodb文档
      */
     this.findOne = function(colName, selector, options, callback) {
-        var arr = [];
         execute(colName, function(err, collection) {
             if (err) {
-                callback && callback({msg:'error'});
+                callback && callback({msg: 'error'});
             }
             else {
                 itrans(selector);
                 collection.findOne(selector, options, callback);
             }
         });
-    }
+    };
     
     /**
      * 按空间位置检索元素
@@ -263,10 +273,9 @@ function MaoGou(params, db) {
      * @param {object} options 参考mongodb文档
      */
     this.geoNear = function(colName, loc, options, callback) {
-        var arr = [];
         execute(colName, function(err, collection) {
             if (err) {
-                callback && callback({msg:'error'});
+                callback && callback({msg: 'error'});
             }
             else {
                 if (options.query) {
@@ -275,7 +284,7 @@ function MaoGou(params, db) {
                 collection.geoNear(loc[0], loc[1], options, callback);
             }
         });
-    }
+    };
     
     /**
      * 计算集合的文档数目
@@ -284,8 +293,8 @@ function MaoGou(params, db) {
     this.count = function(colName, options, callback) {
         execute(colName, function(err, collection) {
             collection.count(options, callback);
-        })
-    }
+        });
+    };
     
     /**
      * 删除文档
@@ -299,7 +308,7 @@ function MaoGou(params, db) {
                 collection.remove(selector, options, callback);
             }      
         });
-    }
+    };
     
     /**
      *  @params {String} colName Collection对应名称
@@ -308,7 +317,7 @@ function MaoGou(params, db) {
      *  @params {Function}
      */
     this.mapReduce = function(colName, map, reduce, options, callback) {
-        options.out = {replace : 'tempCollection'};
+        options.out = {replace: 'tempCollection'};
         execute(colName, function(err, collection) {
            collection.mapReduce(map, reduce, options, 
                function(err, collection) {
@@ -321,7 +330,7 @@ function MaoGou(params, db) {
                }
             );
         });
-    }
+    };
     
     /**
      * 关闭连接池，确认请求都结束后，
@@ -335,7 +344,7 @@ function MaoGou(params, db) {
            db.close();
            db = linkPool.shift();
        }
-    }
+    };
     
     _construct();
 }

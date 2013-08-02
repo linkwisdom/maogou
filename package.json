@@ -4,7 +4,7 @@
   },
   "name": "maogou",
   "description": "help noder connect and query mongodb in mognod style, however, promise and uncrurring pattern also supported, joy node!",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "git://github.com/linkwisdom/maogou.git"
@@ -17,6 +17,7 @@
     "maogou"
   ],
   "dependencies": {
+    "mongodb": ">=1.2.8"
   },
   "engines": {
     "node": "*"

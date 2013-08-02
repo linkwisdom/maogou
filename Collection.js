@@ -18,7 +18,7 @@ function Augment(fname, options) {
         me[item] = function(value) {
             options[item] = value;
             return me;
-        }
+        };
     }
     
     this.resolve = function(err, result) {
@@ -38,31 +38,31 @@ function Augment(fname, options) {
         } while(fun);
         
         emitter.emit('ok', result);
-    }
+    };
     
     this.onError = function(callback) {
         emitter.on('error', callback);
-    }
+    };
     
     this.onSuccess = function(callback) {
         emitter.on('ok', callback);
-    }
+    };
 
     this.set = function(params) {
         for (var item in params) {
             options[item] = params[item];
         }
         return me;
-    }
+    };
 
     this.then = function(callback) {
         taskQue.push(callback);
         return this;
-    }
+    };
     
     this.done = function(cback) {
         taskQue.push(cback);
-    }
+    };
     
     if (funs) {
         funs.forEach(function(fun) {
@@ -76,7 +76,7 @@ function Collection(name, database) {
     var me = this;
     
     function _init() {
-        for(var item in db) {
+        for (var item in db) {
             var f = db[item];
             if (typeof f == 'function') {
                 me[item] = bindMethod(item, name);
@@ -96,9 +96,10 @@ function Collection(name, database) {
             args.push(options);
             args.push(aug.resolve);
             f.apply(db, args);
+            
             //每个函数对应一个augment对象
             return aug;
-        }
+        };
     }
     
     _init();
