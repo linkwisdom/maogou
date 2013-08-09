@@ -23,7 +23,7 @@
 
 # features
 
--  easy setup and connect mongodb
+-  easy to setup and connect mongodb
  
   简洁的连接方式
 
