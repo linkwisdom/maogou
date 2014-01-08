@@ -1,15 +1,17 @@
-var MaoGou = require('./maogou');
+var MaoGou = require('maogou');
 var params = {
     db: 'travel',
-    ip: 'node.liandong.org',
-    port: 9999,
-    username: root,
+    ip: 'localhost',
+    port: 8973,
+    //username: root,
     //password: false,
     igrep: true
 };
 
-var db = new MaoGou(params);
+var db = new MaoGou();
+
 db.connect(params, ['test', 'photo']);
+
 var photo = db.photo;
 
 function print(err, result) {
@@ -121,5 +123,5 @@ function testRemove() {
 }
 
 
-//testInsert();
+testInsert();
 //testFind()

@@ -34,7 +34,9 @@ function Augment(fname, options) {
     }
     
     //执行promise任务链
-    this.resolve = function(err, result) {
+    this.resolve = function(err, result, db) {
+        var me = this;
+
         if (err) {
             err.func = fname;
             emitter.emit('error', err);
@@ -45,11 +47,16 @@ function Augment(fname, options) {
         do {
             fun = taskQue.shift();
             if (fun) {
-                rst = fun(err, rst || result);
+                rst = fun.call(me, err, rst || result);
             }
             
         } while(fun);
-        
+
+        // 执行完任务自动清理链接池
+        if (db) {
+            db.close();
+        }
+
         //任务执行完毕后，发送成功事件
         emitter.emit('ok', result);
     };
@@ -79,9 +86,12 @@ function Augment(fname, options) {
     };
     
     this.done = function(cback) {
-        taskQue.push(cback);
+        var me = this;
+        taskQue.push(function() {
+            cback && cback();
+        });
     };
-    
+
     if (funs) {
         funs.forEach(function(fun) {
             parameterize(fun);
@@ -99,7 +109,7 @@ function Augment(fname, options) {
 function Collection(name, database) {
     var db = database;
     var me = this;
-    
+
     function _init() {
         for (var item in db) {
             var f = db[item];
@@ -111,17 +121,24 @@ function Collection(name, database) {
 
     function bindMethod(item, name) {
         return function() {
-            var f = db[item];
+            var proc = db[item];
             var options = {};
             
             //第一个参数为库名称
             var aug = new Augment(item, options);
+
             var args = Array.prototype.slice.call(arguments);
             args.unshift(name);
             args.push(options);
-            args.push(aug.resolve);
-            f.apply(db, args);
-            
+
+            args.push(function(err, callback) {
+                aug.resolve(err, callback, db);
+            });
+
+            if (proc) {
+                proc.apply(db, args);
+            }
+
             //每个函数对应一个augment对象
             return aug;
         };

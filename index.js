@@ -226,7 +226,9 @@ function MaoGou(params, db) {
         execute(colName, function(err, collection) {
             collection.insert(json, function(err, docs) {
               collection.count(function(err, count) {
-                callback(null, {count: count});
+                if ('function' == typeof callback) {
+                    callback(err, {count: count});
+                }
               });
             });
         });
